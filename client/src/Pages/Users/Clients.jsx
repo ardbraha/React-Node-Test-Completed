@@ -9,10 +9,17 @@ import { Tooltip, styled } from "@mui/material";
 import { PiDotsThreeOutlineThin, PiTrashLight } from "react-icons/pi";
 import { IoOpenOutline } from "react-icons/io5";
 import { CiEdit } from "react-icons/ci";
-import { Dropdown, Menu, MenuButton, MenuItem, menuItemClasses } from "@mui/base";
+import {
+  Dropdown,
+  Menu,
+  MenuButton,
+  MenuItem,
+  menuItemClasses,
+} from "@mui/base";
 import Filter from "./Filter";
 import User from "./User";
 import DeleteClient from "./Delete";
+import EditClient from "./EditClient";
 
 const blue = {
   100: "#DAECFF",
@@ -49,9 +56,13 @@ const StyledListbox = styled("ul")(
       overflow: auto;
       outline: 0px;
       background: ${theme.palette.mode === "dark" ? grey[900] : "#fff"};
-      border: 1px solid ${theme.palette.mode === "dark" ? grey[700] : grey[200]};
+      border: 1px solid ${
+        theme.palette.mode === "dark" ? grey[700] : grey[200]
+      };
       color: ${theme.palette.mode === "dark" ? grey[300] : grey[900]};
-      box-shadow: 0px 4px 30px ${theme.palette.mode === "dark" ? grey[900] : grey[200]};
+      box-shadow: 0px 4px 30px ${
+        theme.palette.mode === "dark" ? grey[900] : grey[200]
+      };
       z-index: 1;
       `
 );
@@ -68,8 +79,12 @@ const StyledMenuItem = styled(MenuItem)(
       }
     
       &.${menuItemClasses.focusVisible} {
-        outline: 3px solid ${theme.palette.mode === "dark" ? blue[600] : blue[200]};
-        background-color: ${theme.palette.mode === "dark" ? grey[800] : grey[100]};
+        outline: 3px solid ${
+          theme.palette.mode === "dark" ? blue[600] : blue[200]
+        };
+        background-color: ${
+          theme.palette.mode === "dark" ? grey[800] : grey[100]
+        };
         color: ${theme.palette.mode === "dark" ? grey[300] : grey[900]};
       }
     
@@ -78,7 +93,9 @@ const StyledMenuItem = styled(MenuItem)(
       }
     
       &:hover:not(.${menuItemClasses.disabled}) {
-        background-color: ${theme.palette.mode === "dark" ? grey[800] : grey[100]};
+        background-color: ${
+          theme.palette.mode === "dark" ? grey[800] : grey[100]
+        };
         color: ${theme.palette.mode === "dark" ? grey[300] : grey[900]};
       }
       `
@@ -87,7 +104,9 @@ const StyledMenuItem = styled(MenuItem)(
 const Clients = () => {
   ////////////////////////////////////// VARIABLES /////////////////////////////////////
   const dispatch = useDispatch();
-  const { clients, isFetching, error, loggedUser } = useSelector((state) => state.user);
+  const { clients, isFetching, error, loggedUser } = useSelector(
+    (state) => state.user
+  );
   const columns = [
     {
       field: "uid",
@@ -116,21 +135,27 @@ const Clients = () => {
       headerName: "Client Username",
       headerClassName: "super-app-theme--header",
       width: "200",
-      renderCell: (params) => <div className="capitalize font-primary">{params.row.username}</div>,
+      renderCell: (params) => (
+        <div className="capitalize font-primary">{params.row.username}</div>
+      ),
     },
     {
       field: "phone",
       headerName: "Phone",
       headerClassName: "super-app-theme--header",
       width: "150",
-      renderCell: (params) => <div className="font-primary">{params.row.phone}</div>,
+      renderCell: (params) => (
+        <div className="font-primary">{params.row.phone}</div>
+      ),
     },
     {
       field: "email",
       headerName: "Email",
       headerClassName: "super-app-theme--header",
       width: "220",
-      renderCell: (params) => <div className="font-primary">{params.row?.email}</div>,
+      renderCell: (params) => (
+        <div className="font-primary">{params.row?.email}</div>
+      ),
     },
     {
       field: "action",
@@ -139,16 +164,28 @@ const Clients = () => {
       headerClassName: "super-app-theme--header",
       renderCell: (params) => (
         <div className="flex gap-[10px]">
-          {
-            loggedUser?.role != 'employee' &&
-            <Tooltip placement="top" title="Delete" arrow>
-              {" "}
-              <PiTrashLight
-                onClick={() => handleOpenDeleteModal(params.row._id)}
-                className="cursor-pointer text-red-500 text-[23px] hover:text-red-400"
-              />
-            </Tooltip>
-          }
+          {loggedUser?.role != "employee" && (
+            <Dropdown>
+              <MenuButton className="bg-transparent border-none cursor-pointer">
+                <Tooltip placement="top" title="Actions" arrow>
+                  <PiDotsThreeOutlineThin className="text-[20px] font-light hover:bg-gray-200 rounded-full p-1" />
+                </Tooltip>
+              </MenuButton>
+              <Menu slots={{ listbox: StyledListbox }}>
+                <StyledMenuItem>
+                  <IoOpenOutline className="text-[20px]" /> Open
+                </StyledMenuItem>
+                <StyledMenuItem onClick={() => handleEdit(params.row)}>
+                  <CiEdit className="text-[20px]" /> Edit
+                </StyledMenuItem>
+                <StyledMenuItem
+                  onClick={() => handleOpenDeleteModal(params.row._id)}
+                >
+                  <PiTrashLight className="text-[20px]" /> Delete
+                </StyledMenuItem>
+              </Menu>
+            </Dropdown>
+          )}
         </div>
       ),
     },
@@ -158,16 +195,15 @@ const Clients = () => {
   const [openEditModal, setOpenEditModal] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState("");
+  const [selectedClientData, setSelectedClientData] = useState(null);
   const [openFilters, setOpenFilters] = useState("");
   const [openUser, setOpenUser] = useState(false);
 
   ////////////////////////////////////// USE EFFECTS ////////////////////////////////////
   useEffect(() => {
-    loggedUser.role == 'employee'
-      ?
-      dispatch(getEmployeeClients())
-      :
-      dispatch(getClients());
+    loggedUser.role == "employee"
+      ? dispatch(getEmployeeClients())
+      : dispatch(getClients());
   }, []);
 
   ////////////////////////////////////// FUNCTIONS //////////////////////////////////////////
@@ -183,10 +219,24 @@ const Clients = () => {
     setOpenDeleteModal(true);
   };
 
+  const handleEdit = (clientData) => {
+    setSelectedClientData(clientData);
+    setOpenEditModal(true);
+  };
+
   return (
     <div className="w-full">
-
-      <DeleteClient open={openDeleteModal} setOpen={setOpenDeleteModal} userId={selectedUserId} />
+      <DeleteClient
+        open={openDeleteModal}
+        setOpen={setOpenDeleteModal}
+        userId={selectedUserId}
+      />
+      <EditClient
+        open={openEditModal}
+        setOpen={setOpenEditModal}
+        clientData={selectedClientData}
+        scroll="paper"
+      />
       <Filter open={openFilters} setOpen={setOpenFilters} />
       <User open={openUser} setOpen={setOpenUser} />
 

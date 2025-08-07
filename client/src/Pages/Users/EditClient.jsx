@@ -1,6 +1,8 @@
-import React, { useState } from "react";
+// 4. Add client edit feature.
+
+import React, { useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { createEmployee } from "../../redux/action/user";
+import { updateUser } from "../../redux/action/user";
 import {
   Divider,
   Dialog,
@@ -16,15 +18,14 @@ const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="down" ref={ref} {...props} />;
 });
 
-const CreateUser = ({ open, setOpen, scroll }) => {
+const EditClient = ({ open, setOpen, scroll, clientData }) => {
   //////////////////////////////////////// VARIABLES /////////////////////////////////////
   const { isFetching } = useSelector((state) => state.user);
   const dispatch = useDispatch();
-  const initialEmployeeState = {
+  const initialClientState = {
     firstName: "",
     lastName: "",
     username: "",
-    password: "",
     phone: "",
     email: "",
   };
@@ -33,45 +34,48 @@ const CreateUser = ({ open, setOpen, scroll }) => {
     firstName: "",
     lastName: "",
     username: "",
-    password: "",
     phone: "",
     email: "",
   };
 
   //////////////////////////////////////// STATES /////////////////////////////////////
-  const [employeeData, setEmployeeData] = useState(initialEmployeeState);
+  const [editClientData, setEditClientData] = useState(initialClientState);
   const [errors, setErrors] = useState(initialErrorState);
 
   //////////////////////////////////////// USE EFFECTS /////////////////////////////////////
+  useEffect(() => {
+    if (clientData && open) {
+      setEditClientData({
+        firstName: clientData.firstName || "",
+        lastName: clientData.lastName || "",
+        username: clientData.username || "",
+        phone: clientData.phone || "",
+        email: clientData.email || "",
+      });
+    }
+  }, [clientData, open]);
 
   //////////////////////////////////////// FUNCTIONS /////////////////////////////////////
-
-  // 2. When create new Employee, display form validation message(under each field) instead of alert if some fields are empty
   const validateForm = () => {
     const newErrors = { ...initialErrorState };
     let isValid = true;
 
-    if (!employeeData.firstName.trim()) {
+    if (!editClientData.firstName.trim()) {
       newErrors.firstName = "First name is required";
       isValid = false;
     }
 
-    if (!employeeData.lastName.trim()) {
+    if (!editClientData.lastName.trim()) {
       newErrors.lastName = "Last name is required";
       isValid = false;
     }
 
-    if (!employeeData.username.trim()) {
+    if (!editClientData.username.trim()) {
       newErrors.username = "Username is required";
       isValid = false;
     }
 
-    if (!employeeData.password.trim()) {
-      newErrors.password = "Password is required";
-      isValid = false;
-    }
-
-    if (!employeeData.phone.trim()) {
+    if (!editClientData.phone.trim()) {
       newErrors.phone = "Phone number is required";
       isValid = false;
     }
@@ -85,13 +89,12 @@ const CreateUser = ({ open, setOpen, scroll }) => {
     if (!validateForm()) {
       return;
     }
-    dispatch(createEmployee(employeeData, setOpen));
-    setEmployeeData(initialEmployeeState);
+    dispatch(updateUser(clientData._id, editClientData, setOpen));
     setErrors(initialErrorState);
   };
 
   const handleChange = (field, value) => {
-    setEmployeeData((prevFilters) => ({ ...prevFilters, [field]: value }));
+    setEditClientData((prevData) => ({ ...prevData, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prevErrors) => ({ ...prevErrors, [field]: "" }));
@@ -100,32 +103,33 @@ const CreateUser = ({ open, setOpen, scroll }) => {
 
   const handleClose = () => {
     setOpen(false);
-    setEmployeeData(initialEmployeeState);
+    setEditClientData(initialClientState);
+    setErrors(initialErrorState);
   };
 
   return (
     <div>
       <Dialog
-        scroll={scroll}
         open={open}
         TransitionComponent={Transition}
         keepMounted
         onClose={handleClose}
         fullWidth="sm"
         maxWidth="sm"
+        scroll={scroll}
         aria-describedby="alert-dialog-slide-description"
       >
         <DialogTitle className="flex items-center justify-between">
-          <div className="text-sky-400 font-primary">Add New Employee</div>
+          <div className="text-sky-400 font-primary">Edit Client</div>
           <div className="cursor-pointer" onClick={handleClose}>
             <PiXLight className="text-[25px]" />
           </div>
         </DialogTitle>
         <DialogContent>
-          <div className="flex flex-col gap-2 p-3 text-gray-500 font-primary">
-            <div className="text-xl flex justify-start items-center gap-2 font-normal">
+          <div className="flex flex-col gap-2 p-3 text-gray-500">
+            <div className="text-xl flex justify-start items-center gap-2 text-[#8A92A6]">
               <PiNotepad size={23} />
-              <span>Employee Detials</span>
+              <span>Client Details</span>
             </div>
             <Divider />
             <table className="mt-4">
@@ -135,7 +139,7 @@ const CreateUser = ({ open, setOpen, scroll }) => {
                   <TextField
                     size="small"
                     fullWidth
-                    value={employeeData.firstName}
+                    value={editClientData.firstName}
                     onChange={(e) => handleChange("firstName", e.target.value)}
                     error={!!errors.firstName}
                     helperText={errors.firstName}
@@ -148,7 +152,7 @@ const CreateUser = ({ open, setOpen, scroll }) => {
                   <TextField
                     size="small"
                     fullWidth
-                    value={employeeData.lastName}
+                    value={editClientData.lastName}
                     onChange={(e) => handleChange("lastName", e.target.value)}
                     error={!!errors.lastName}
                     helperText={errors.lastName}
@@ -161,7 +165,7 @@ const CreateUser = ({ open, setOpen, scroll }) => {
                   <TextField
                     size="small"
                     fullWidth
-                    value={employeeData.username}
+                    value={editClientData.username}
                     onChange={(e) => handleChange("username", e.target.value)}
                     error={!!errors.username}
                     helperText={errors.username}
@@ -175,22 +179,10 @@ const CreateUser = ({ open, setOpen, scroll }) => {
                     size="small"
                     fullWidth
                     placeholder="Optional"
-                    value={employeeData.email}
+                    value={editClientData.email}
                     onChange={(e) => handleChange("email", e.target.value)}
-                  />
-                </td>
-              </tr>
-              <tr>
-                <td className="flex items-start pt-2 text-lg">Password </td>
-                <td className="pb-4">
-                  <TextField
-                    type="password"
-                    value={employeeData.password}
-                    onChange={(e) => handleChange("password", e.target.value)}
-                    size="small"
-                    fullWidth
-                    error={!!errors.password}
-                    helperText={errors.password}
+                    error={!!errors.email}
+                    helperText={errors.email}
                   />
                 </td>
               </tr>
@@ -200,7 +192,7 @@ const CreateUser = ({ open, setOpen, scroll }) => {
                   <TextField
                     type="number"
                     size="small"
-                    value={employeeData.phone}
+                    value={editClientData.phone}
                     onChange={(e) => handleChange("phone", e.target.value)}
                     fullWidth
                     error={!!errors.phone}
@@ -225,7 +217,7 @@ const CreateUser = ({ open, setOpen, scroll }) => {
             variant="contained"
             className="bg-primary-red px-4 py-2 rounded-lg text-white mt-4 hover:bg-red-400 font-thin"
           >
-            {isFetching ? "Submitting..." : "Submit"}
+            {isFetching ? "Updating..." : "Update"}
           </button>
         </DialogActions>
       </Dialog>
@@ -233,4 +225,4 @@ const CreateUser = ({ open, setOpen, scroll }) => {
   );
 };
 
-export default CreateUser;
+export default EditClient;
